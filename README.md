@@ -9,7 +9,7 @@
 - 💡 **智能推荐**：基于分析结果生成5组推荐号码（3组推荐+2组参考）
 - 🔄 **自动运行**：GitHub Actions定时自动执行（每周二四日/一三六 12:00）
 - 📱 **微信推送**：通过企业微信机器人发送分析结果
-- 💾 **数据缓存**：本地缓存24小时，减少API调用
+- 💾 **本地数据**：爬取并保存最近30期历史数据
 
 ## 📋 支持的彩票
 
@@ -50,13 +50,17 @@ cp .env.example .env
 ```bash
 pip install -r requirements.txt
 
-# 测试运行（不发送消息）
-python src/main.py --lottery ssq --test
-
-# 实际运行（发送消息到企业微信）
-python src/main.py --lottery ssq
-python src/main.py --lottery dlt
+# 首次运行会自动从 500.com 爬取最近30期历史数据
+python src/main.py --lottery ssq --test   # 测试运行（不发送消息）
+python src/main.py --lottery ssq          # 实际运行（发送消息到企业微信）
+python src/main.py --lottery dlt          # 分析大乐透
 ```
+
+### 4. 数据来源
+- 数据来源：500彩票网 (kaijiang.500.com)
+- 首次运行自动获取最近30期历史数据
+- 后续运行只获取最新一期，保持30条历史记录
+- 带请求延迟和重试机制，避免被封
 
 ## 🔧 配置说明
 
@@ -147,8 +151,8 @@ lottery_analysis_assistant/
 │   │       ├── ssq_analyzer.py
 │   │       └── dlt_analyzer.py
 │   ├── data/                       # 数据获取
-│   │   ├── api_client.py
-│   │   └── fetcher.py
+│   │   ├── spider.py                # 500.com 数据爬虫
+│   │   └── fetcher.py               # 数据获取器
 │   ├── recommendation/             # 推荐生成
 │   │   └── generator.py
 │   ├── notification/               # 企业微信推送
