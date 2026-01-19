@@ -1,4 +1,4 @@
-name: Lottery Analysis and Notification
+name: 彩票分析与推送
 
 on:
   schedule:
