@@ -1,15 +1,15 @@
 # 🎯 彩票数据分析与推荐系统
 
-基于AI的彩票数据分析系统，支持双色球和大乐透的智能分析与推荐。
+基于AI的彩票数据分析系统，支持双色球和大乐透的智能分析与推荐。通过企业微信自动推送分析结果。
 
 ## ✨ 功能特点
 
 - 🤖 **AI智能分析**：使用Google Gemini和DeepSeek进行深度数据分析
 - 📊 **传统统计**：热号、冷号、奇偶比、大小比等多维度分析
-- 💡 **智能推荐**：基于分析结果生成5组推荐号码
-- 🔄 **自动运行**：GitHub Actions定时自动执行
+- 💡 **智能推荐**：基于分析结果生成5组推荐号码（3组推荐+2组参考）
+- 🔄 **自动运行**：GitHub Actions定时自动执行（每周二四日/一三六 12:00）
 - 📱 **微信推送**：通过企业微信机器人发送分析结果
-- 💾 **数据缓存**：智能缓存减少API调用
+- 💾 **数据缓存**：本地缓存24小时，减少API调用
 
 ## 📋 支持的彩票
 
@@ -18,91 +18,70 @@
 | 双色球 | 周二、四、日 21:15 | 当天12:00 |
 | 大乐透 | 周一、三、六 21:25 | 当天12:00 |
 
-## 🚀 快速开始（Fork方法）
+## 🚀 快速开始
 
-### 方法一：Fork后使用（推荐⭐）
+### 1. Fork本项目（推荐）
 
-1. **Fork本项目**
-   - 点击右上角 **Fork** 按钮
-   - 选择你的GitHub账号
-
-2. **克隆到本地**
+1. 点击GitHub右上角 **Fork** 按钮
+2. 克隆到本地：
    ```bash
    git clone https://github.com/你的用户名/lottery_analysis_assistant.git
    cd lottery_analysis_assistant
    ```
 
-3. **创建配置文件**
-   ```bash
-   cp config/config.example.yaml config/config.yaml
-   ```
+### 2. 设置环境变量（任选一种方式）
 
-4. **填入你的密钥**
-   编辑 `config/config.yaml`，替换以下内容：
-   ```yaml
-   ai:
-     providers:
-       gemini:
-         api_key: "YOUR_GEMINI_API_KEY"  # 填入你的Gemini API Key
-       deepseek:
-         api_key: "YOUR_DEEPSEEK_API_KEY"  # 填入你的DeepSeek API Key
-   
-   notification:
-     wechat:
-       webhook_url: "YOUR_WECHAT_WEBHOOK_URL"  # 填入你的企业微信Webhook URL
-   ```
-
-5. **安装依赖并测试**
-   ```bash
-   pip install -r requirements.txt
-   python src/main.py --lottery ssq --test  # 测试模式
-   ```
-
-6. **设置GitHub Secrets**（可选，用于自动化运行）
-   - 在仓库 Settings → Secrets and variables → Actions 中添加：
-     - `WECHAT_WEBHOOK_URL`
-     - `GEMINI_API_KEY`
-     - `DEEPSEEK_API_KEY`
-
-### 方法二：从头开始
-
-按照以下步骤操作：
+#### 方式一：本地开发（使用.env文件）
 ```bash
-git clone https://github.com/你的用户名/lottery_analysis_assistant.git
-cd lottery_analysis_assistant
-cp config/config.example.yaml config/config.yaml
-# 编辑config/config.yaml填入密钥
-pip install -r requirements.txt
-python src/main.py --lottery ssq
+cp .env.example .env
+# 编辑.env文件，填入你的密钥
 ```
 
----
+#### 方式二：GitHub Actions自动运行（推荐）
+在仓库 **Settings → Secrets and variables → Actions** 中添加：
 
-## 📋 配置文件说明
-
-- `config/config.example.yaml` - 配置模板（已提交到GitHub）
-- `config/config.yaml` - 实际配置文件（已加入.gitignore，不会提交）
-- `.env` - 环境变量文件（已加入.gitignore）
-
-**注意**：敏感信息不会提交到GitHub，保护你的API密钥安全！
-
----
-
-| Secret Name | Description |
-|------------|-------------|
+| Secret Name | Value |
+|------------|-------|
 | `WECHAT_WEBHOOK_URL` | 企业微信机器人Webhook URL |
 | `GEMINI_API_KEY` | Google Gemini API密钥 |
 | `DEEPSEEK_API_KEY` | DeepSeek API密钥（可选） |
 
-### 3. 自动运行
+### 3. 安装依赖并运行
+```bash
+pip install -r requirements.txt
 
-系统会自动在以下时间运行：
-- **双色球**：每周二、四、日 中午12:00（北京时间）
-- **大乐透**：每周一、三、六 中午12:00（北京时间）
+# 测试运行（不发送消息）
+python src/main.py --lottery ssq --test
 
-### 4. 手动触发
+# 实际运行（发送消息到企业微信）
+python src/main.py --lottery ssq
+python src/main.py --lottery dlt
+```
 
-在GitHub Actions页面可以手动触发运行。
+## 🔧 配置说明
+
+### 环境变量
+
+系统通过以下环境变量获取配置：
+
+| 环境变量 | 说明 | 必需 |
+|---------|------|------|
+| `WECHAT_WEBHOOK_URL` | 企业微信机器人Webhook URL | ✅ |
+| `GEMINI_API_KEY` | Google Gemini API密钥 | ✅ |
+| `DEEPSEEK_API_KEY` | DeepSeek API密钥 | ❌（可选） |
+
+### 本地开发
+
+创建 `.env` 文件：
+```bash
+WECHAT_WEBHOOK_URL=https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx
+GEMINI_API_KEY=your_gemini_api_key
+DEEPSEEK_API_KEY=your_deepseek_api_key
+```
+
+### GitHub Actions
+
+在仓库Secrets中设置以上环境变量，系统会自动在开奖当天12:00运行。
 
 ## 📊 分析维度
 
@@ -122,50 +101,63 @@ python src/main.py --lottery ssq
 ## 💡 输出示例
 
 ```
-🤖 AI智能分析 - 双色球第2025019期
+🤖 AI智能分析 - 双色球第2026008期
 
 📅 上一期开奖信息：
-- 期号：2025018期
-- 开奖号码：08 15 22 27 29 33 | 11
-- 开奖时间：2025-01-18 21:15
+- 期号：2026008
+- 开奖号码：6 9 16 27 31 33 | 10
 
 📊 传统统计分析：
-- 热号TOP10：08, 15, 22, 29, 33, ...
-- 冷号TOP10：03, 07, 14, 19, 25, ...
-- 平均奇偶比：3:3
-- 平均大小比：2:4
+- 热号TOP10：13, 5, 2, 9, 30...
+- 冷号TOP10：21, 25, 29, 11...
+- 平均奇偶比：3.0:3.0
+- 平均大小比：2.7:3.3
 
-💡 AI智能推荐（5组）：
-⭐⭐⭐ 第1组：08 15 22 27 29 33 | 11
-  推荐理由：热号组合，符合近期大小交替模式
+💡 AI智能推荐
+🎯 最推荐（按评分排序）：
+⭐⭐⭐ 第2组：1 2 13 22 23 24 | 15
+  推荐理由：热号组合，奇偶均衡...
+📌 参考推荐：
+⭐ 第1组：13 17 22 29 30 31 | 16
+  推荐理由：热号组合，含连号...
 
-⭐⭐ 第2组：05 12 18 24 30 31 | 06
-  推荐理由：平衡组合，包含上升趋势的偶数号码
-
+📋 推荐号码汇总
+推荐   号码                           评分
+----------------------------------------
+[推荐]第 2组  1 2 13 22 23 24 | 15   100.0
 ...
+
+🎯 最推荐：第 2, 4, 5 组
 ```
 
 ## 📁 项目结构
 
 ```
-lottery-analysis/
+lottery_analysis_assistant/
 ├── .github/
 │   └── workflows/
-│       └── lottery-analysis.yml    # GitHub Actions配置
+│       └── lottery-analysis.yml    # GitHub Actions定时任务
 ├── src/
-│   ├── config/                     # 配置模块
-│   ├── data/                       # 数据获取和缓存
+│   ├── ai/                         # AI分析模块
+│   │   ├── analyzer.py
+│   │   ├── gemini_client.py
+│   │   └── deepseek_client.py
 │   ├── analysis/                   # 数据分析
-│   │   └── traditional/            # 传统统计分析
+│   │   └── traditional/
+│   │       ├── ssq_analyzer.py
+│   │       └── dlt_analyzer.py
+│   ├── data/                       # 数据获取
+│   │   ├── api_client.py
+│   │   └── fetcher.py
 │   ├── recommendation/             # 推荐生成
-│   ├── notification/               # 企业微信通知
-│   ├── ai/                         # AI分析
+│   │   └── generator.py
+│   ├── notification/               # 企业微信推送
+│   │   ├── wechat_bot.py
+│   │   └── message_builder.py
+│   ├── config/                     # 配置模块
+│   │   └── settings.py
 │   └── main.py                     # 主程序入口
-├── config/
-│   └── config.yaml                 # 配置文件
-├── data/
-│   └── cache/                      # 数据缓存
-├── logs/                           # 日志文件
+├── .env.example                    # 环境变量模板
 ├── requirements.txt                # Python依赖
 └── README.md                       # 项目说明
 ```
