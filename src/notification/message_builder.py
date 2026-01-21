@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 class MessageBuilder:
     """消息构建器"""
 
-    # 企业微信 markdown 限制
-    MAX_MESSAGE_LENGTH = 3500  # 留出余量，实际限制 4096
+    # 企业微信 markdown 限制（留出余量）
+    MAX_MESSAGE_LENGTH = 3000  # 实际限制 4096
     MAX_SEGMENTS = 5  # 最大分段数
 
     def __init__(self, lottery_type: str):
@@ -67,27 +67,49 @@ class MessageBuilder:
         paragraphs = message.split("\n\n")
 
         for para in paragraphs:
-            # 如果单个段落就超过限制，尝试在内部分割
+            # 如果单个段落就超过限制，尝试更激进地分割
             if len(para) > self.MAX_MESSAGE_LENGTH:
-                # 先保存当前的
                 if current:
                     segments.append(current)
                     current = ""
+                
                 # 尝试按行分割
                 lines = para.split("\n")
                 for line in lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+                        
+                    # 如果单行就超长，按句子分割
+                    if len(line) > self.MAX_MESSAGE_LENGTH:
+                        # 保存之前的
+                        if current:
+                            segments.append(current)
+                            current = ""
+                        
+                        # 按句子和空格分割
+                        words = line.split()
+                        for word in words:
+                            if len(current) + len(word) + 1 > self.MAX_MESSAGE_LENGTH:
+                                if current:
+                                    segments.append(current)
+                                current = word
+                            else:
+                                current = (current + " " + word).strip()
+                        continue
+                    
+                    # 普通行处理
                     if len(current) + len(line) + 2 > self.MAX_MESSAGE_LENGTH:
                         if current:
                             segments.append(current)
-                        current = line + "\n"
+                        current = line
                     else:
-                        current += line + "\n"
+                        current = (current + "\n\n" + line) if current else line
                 continue
 
             # 检查加入当前段落后是否超限
             test_content = current + ("\n\n" if current else "") + para
             if len(test_content) > self.MAX_MESSAGE_LENGTH:
-                # 保存当前段，保存当前段
                 if current:
                     segments.append(current)
                 current = para
@@ -173,9 +195,9 @@ class MessageBuilder:
         
         # 提取AI分析的关键内容
         if raw_result:
-            # 取前1000字符作为AI分析摘要
-            summary = raw_result[:1000]
-            if len(raw_result) > 1000:
+            # 取前800字符作为AI分析摘要（减少以缩短消息长度）
+            summary = raw_result[:800]
+            if len(raw_result) > 800:
                 summary += "...\n\n> AI分析内容较长，以上为摘要"
             else:
                 summary += "\n"
