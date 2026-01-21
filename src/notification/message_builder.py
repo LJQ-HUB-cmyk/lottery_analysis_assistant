@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 class MessageBuilder:
     """消息构建器"""
 
-    # 企业微信 markdown 限制（留出余量）
-    MAX_MESSAGE_LENGTH = 3000  # 实际限制 4096
+    # 企业微信 markdown 限制（留出余量，实际限制4096）
+    MAX_MESSAGE_LENGTH = 2800  # 安全阈值
     MAX_SEGMENTS = 5  # 最大分段数
 
     def __init__(self, lottery_type: str):
