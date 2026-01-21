@@ -39,10 +39,10 @@ class GeminiClient:
     def generate_content(self, prompt: str) -> Optional[str]:
         """
         生成内容
-        
+
         Args:
             prompt: 提示词
-        
+
         Returns:
             AI生成的文本内容
         """
@@ -54,16 +54,34 @@ class GeminiClient:
                     max_output_tokens=self.max_output_tokens
                 )
             )
-            
+
             if response.text:
                 return response.text
             else:
                 logger.warning("Gemini返回空内容")
                 return None
-                
+
         except Exception as e:
             logger.error(f"Gemini API调用失败: {e}")
             return None
+
+    def check_availability(self) -> bool:
+        """
+        检查API是否可用
+
+        Returns:
+            API是否可用
+        """
+        try:
+            # 尝试调用模型列表 API 来验证
+            for model in genai.list_models():
+                if model.name == f"models/{self.model}":
+                    return True
+            # 如果模型不存在，抛出异常
+            raise ValueError(f"Model {self.model} not available")
+        except Exception as e:
+            logger.warning(f"Gemini API不可用: {e}")
+            return False
     
     def generate_json(self, prompt: str) -> Optional[Dict[str, Any]]:
         """

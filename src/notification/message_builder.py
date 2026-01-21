@@ -11,11 +11,15 @@ logger = logging.getLogger(__name__)
 
 class MessageBuilder:
     """消息构建器"""
-    
+
+    # 企业微信 markdown 限制
+    MAX_MESSAGE_LENGTH = 3500  # 留出余量，实际限制 4096
+    MAX_SEGMENTS = 5  # 最大分段数
+
     def __init__(self, lottery_type: str):
         self.lottery_type = lottery_type
         self.lottery_name = "双色球" if lottery_type == "ssq" else "大乐透"
-    
+
     def build_message(
         self,
         previous_draw: Dict[str, Any],
@@ -25,31 +29,91 @@ class MessageBuilder:
         top_recommendations: List[Recommendation]
     ) -> str:
         """构建完整消息"""
-        
+
         message = f"# 🤖 AI智能分析 - {self.lottery_name}第{previous_draw.get('period', '????')}期\n\n"
-        
+
         # 上一期开奖信息
         message += self._build_previous_draw_section(previous_draw)
-        
+
         # 传统统计分析
         message += self._build_traditional_section(traditional_analysis)
-        
+
         # AI深度分析
         if ai_analysis:
             message += self._build_ai_section(ai_analysis)
-        
+
         # 推荐号码
         message += self._build_recommendations_section(
             recommendations, top_recommendations
         )
-        
+
         # 分析说明
         message += self._build_analysis_note(previous_draw)
-        
+
         # 免责声明
         message += self._build_disclaimer()
-        
+
         return message
+
+    def split_message(self, message: str) -> List[str]:
+        """拆分消息为多段（企业微信限制）"""
+        if len(message) <= self.MAX_MESSAGE_LENGTH:
+            return [message]
+
+        segments = []
+        current = ""
+
+        # 按段落分割
+        paragraphs = message.split("\n\n")
+
+        for para in paragraphs:
+            # 如果单个段落就超过限制，尝试在内部分割
+            if len(para) > self.MAX_MESSAGE_LENGTH:
+                # 先保存当前的
+                if current:
+                    segments.append(current)
+                    current = ""
+                # 尝试按行分割
+                lines = para.split("\n")
+                for line in lines:
+                    if len(current) + len(line) + 2 > self.MAX_MESSAGE_LENGTH:
+                        if current:
+                            segments.append(current)
+                        current = line + "\n"
+                    else:
+                        current += line + "\n"
+                continue
+
+            # 检查加入当前段落后是否超限
+            test_content = current + ("\n\n" if current else "") + para
+            if len(test_content) > self.MAX_MESSAGE_LENGTH:
+                # 保存当前段，保存当前段
+                if current:
+                    segments.append(current)
+                current = para
+            else:
+                current = test_content
+
+        # 保存最后一段
+        if current:
+            segments.append(current)
+
+        # 限制最大分段数
+        if len(segments) > self.MAX_SEGMENTS:
+            # 合并后面的段落
+            merged = segments[:2] + ["\n\n---\n\n".join(segments[2:])]
+            segments = merged[:self.MAX_SEGMENTS]
+            # 最后一节添加截断提示
+            segments[-1] += "\n\n> **消息过长，已截断**"
+
+        # 添加分段标识
+        result = []
+        for i, seg in enumerate(segments, 1):
+            if len(segments) > 1:
+                seg = f"**【第 {i}/{len(segments)} 部分】**\n\n{seg}"
+            result.append(seg)
+
+        return result
     
     def _build_previous_draw_section(self, previous_draw: Dict[str, Any]) -> str:
         """构建上一期开奖信息"""

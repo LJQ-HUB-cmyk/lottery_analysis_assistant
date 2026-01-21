@@ -25,18 +25,18 @@ class AIAnalyzer:
         """获取AI客户端"""
         if provider in self._clients:
             return self._clients[provider]
-        
+
         provider_config = self.providers.get(provider, {})
-        
+
         if not provider_config.get('enabled', False):
             logger.warning(f"AI提供商 {provider} 未启用")
             return None
-        
+
         api_key = provider_config.get('api_key', '')
         if not api_key or api_key.startswith('YOUR_'):
             logger.warning(f"{provider} API密钥未配置")
             return None
-        
+
         try:
             if provider == 'gemini':
                 client = GeminiClient(
@@ -44,6 +44,10 @@ class AIAnalyzer:
                     model=provider_config.get('model', 'gemini-1.5-flash'),
                     temperature=provider_config.get('temperature', 0.7)
                 )
+                # 检查 Gemini API 是否可用
+                if not client.check_availability():
+                    logger.warning(f"Gemini API不可用，将使用备用提供商")
+                    return None
             elif provider == 'deepseek':
                 client = DeepSeekClient(
                     api_key=api_key,
@@ -53,10 +57,10 @@ class AIAnalyzer:
             else:
                 logger.error(f"不支持的AI提供商: {provider}")
                 return None
-            
+
             self._clients[provider] = client
             return client
-            
+
         except Exception as e:
             logger.error(f"初始化{provider}客户端失败: {e}")
             return None

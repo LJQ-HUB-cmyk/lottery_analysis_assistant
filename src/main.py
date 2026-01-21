@@ -147,31 +147,54 @@ def run_analysis(lottery_type: str, config: dict, test_mode: bool = False) -> bo
             recommendations=recommendations,
             top_recommendations=top_recommendations
         )
-        
+
+        # 如果消息过长，拆分成多段
+        segments = msg_builder.split_message(message)
+        logger.info(f"消息已拆分為 {len(segments)} 段")
+
         # 9. 发送消息
         if not test_mode:
             logger.info("发送企业微信通知...")
             webhook_url = config.get('notification', {}).get('wechat', {}).get('webhook_url', '')
-            
+
             if not webhook_url or webhook_url.startswith('YOUR_'):
                 logger.error("企业微信Webhook URL未配置")
                 return False
-            
+
             bot = WeChatBot(webhook_url)
-            
-            if bot.send_markdown(message):
-                logger.info("消息发送成功！")
-                return True
+
+            if len(segments) == 1:
+                # 单条消息
+                if bot.send_markdown(segments[0]):
+                    logger.info("消息发送成功！")
+                    return True
+                else:
+                    logger.error("消息发送失败")
+                    return False
             else:
-                logger.error("消息发送失败")
-                return False
+                # 多条消息
+                logger.info(f"发送 {len(segments)} 条消息...")
+                success_count, fail_count = bot.send_markdown_batch(segments)
+
+                if success_count == len(segments):
+                    logger.info(f"全部 {len(segments)} 条消息发送成功！")
+                    return True
+                elif success_count > 0:
+                    logger.warning(f"部分消息发送成功: {success_count}/{len(segments)}")
+                    return True
+                else:
+                    logger.error("所有消息发送失败")
+                    return False
         else:
             # 测试模式，打印消息
             logger.info("测试模式，不发送实际消息")
             print("\n" + "="*60)
-            print("消息预览：")
+            print(f"消息预览（共 {len(segments)} 段）：")
             print("="*60)
-            print(message)
+            for i, seg in enumerate(segments, 1):
+                if len(segments) > 1:
+                    print(f"\n--- 第 {i}/{len(segments)} 段 ---")
+                print(seg)
             print("="*60 + "\n")
             return True
         

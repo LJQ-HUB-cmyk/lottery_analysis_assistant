@@ -32,8 +32,34 @@ class WeChatBot:
                 "content": content
             }
         }
-        
+
         return self._send(payload)
+
+    def send_markdown_batch(self, contents: list) -> tuple[int, int]:
+        """
+        批量发送Markdown消息
+
+        Args:
+            contents: 消息内容列表
+
+        Returns:
+            (成功数量, 失败数量)
+        """
+        success_count = 0
+        fail_count = 0
+
+        for i, content in enumerate(contents, 1):
+            logger.info(f"发送第 {i}/{len(contents)} 条消息...")
+            if self.send_markdown(content):
+                success_count += 1
+            else:
+                fail_count += 1
+            # 添加短暂延迟，避免触发频率限制
+            if i < len(contents):
+                import time
+                time.sleep(1)
+
+        return success_count, fail_count
     
     def send_text(
         self,

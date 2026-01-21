@@ -26,7 +26,7 @@ def load_config(config_path: str = None) -> Dict[str, Any]:
                 'gemini': {
                     'enabled': True,
                     'api_key': os.getenv('GEMINI_API_KEY', ''),
-                    'model': 'gemini-1.5-pro',
+                    'model': 'gemini-1.5-flash',
                     'temperature': 0.7,
                     'max_output_tokens': 2048
                 },
